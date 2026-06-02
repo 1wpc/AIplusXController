@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIplusX PLC Control</title>
+    <link rel="stylesheet" href="/static/styles.css?v=ai-responsive-1" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="console-shell">
+      <header class="topbar">
+        <div class="clock-block">
+          <span id="clock">--:--:--</span>
+          <span>Asia/Shanghai</span>
+        </div>
+        <h1>AIplusX PLC Control</h1>
+        <div class="link-pill">
+          <span class="pulse-dot"></span>
+          <span id="linkStatus">MQTT SYNC</span>
+        </div>
+      </header>
+
+      <section class="control-grid">
+        <aside class="rail left-rail">
+          <section class="panel temperature-panel">
+            <div class="panel-title">SYSTEM OVERVIEW</div>
+            <div class="temperature-readout">
+              <div>
+                <span class="micro-label">TEMPERATURE</span>
+                <strong><span id="temperatureValue">--</span><small>°C</small></strong>
+                <span class="raw-label">RAW MW0 <b id="rawMw0">----</b></span>
+              </div>
+              <canvas id="sparkline" width="220" height="96" aria-label="temperature history"></canvas>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">CONNECTION</div>
+            <div class="kv-grid">
+              <span>MQTT BROKER</span><b id="brokerValue">192.168.31.197:1883</b>
+              <span>DEVICE</span>
+              <div class="device-config">
+                <input id="deviceInput" type="text" value="bistu13" aria-label="MQTT device" />
+                <button id="saveDeviceBtn" type="button">SAVE</button>
+              </div>
+              <span>LATENCY</span><b id="latencyValue">-- ms</b>
+              <span>STATE</span><b id="stateValue">BOOTING</b>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">PLC REGISTERS</div>
+            <div class="register-table">
+              <div><span>MW0 温度原始值</span><b id="mw0">----</b></div>
+              <div><span>MW20 散热</span><b id="mw20">--</b></div>
+              <div><span>MW21 自动模式</span><b id="mw21">--</b></div>
+              <div><span>MW22 手动触发</span><b id="mw22">--</b></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title title-row"><span>CONTROL MODE</span><b id="agentState">MANUAL</b></div>
+            <div class="mode-row">
+              <button class="control-button cyan" id="manualModeBtn" type="button">MANUAL</button>
+              <button class="control-button red" id="autoOnceBtn" type="button">AUTO</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">MANUAL CONTROL</div>
+            <div class="mode-row">
+              <button class="control-button cyan strong fan-button" id="coolingOnBtn" type="button">
+                <svg class="fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="2.2"></circle>
+                  <path d="M12 3.2c2.5 0 4.3 1.8 3.7 3.7-.4 1.3-1.8 2.2-3.7 3.2-1.5-1.8-2.2-3.5-1.5-4.9.3-.8.9-1.5 1.5-2z"></path>
+                  <path d="M20.1 15.9c-1.2 2.2-3.6 2.9-5.1 1.5-1-.9-1.1-2.6-1-4.8 2.3-.4 4.1-.1 5 1.2.5.7.8 1.4 1.1 2.1z"></path>
+                  <path d="M4.1 16c-1.2-2.2-.5-4.6 1.5-5.1 1.3-.4 2.8.4 4.7 1.6-.8 2.2-1.9 3.6-3.5 3.8-.9.1-1.8 0-2.7-.3z"></path>
+                </svg>
+                <span>散热 ON</span>
+              </button>
+              <button class="control-button red strong fan-button" id="coolingOffBtn" type="button">
+                <svg class="fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="2.2"></circle>
+                  <path d="M12 3.2c2.5 0 4.3 1.8 3.7 3.7-.4 1.3-1.8 2.2-3.7 3.2-1.5-1.8-2.2-3.5-1.5-4.9.3-.8.9-1.5 1.5-2z"></path>
+                  <path d="M20.1 15.9c-1.2 2.2-3.6 2.9-5.1 1.5-1-.9-1.1-2.6-1-4.8 2.3-.4 4.1-.1 5 1.2.5.7.8 1.4 1.1 2.1z"></path>
+                  <path d="M4.1 16c-1.2-2.2-.5-4.6 1.5-5.1 1.3-.4 2.8.4 4.7 1.6-.8 2.2-1.9 3.6-3.5 3.8-.9.1-1.8 0-2.7-.3z"></path>
+                </svg>
+                <span>散热 OFF</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title title-row"><span>THRESHOLDS (°C)</span><b>HYST 2.0°C</b></div>
+            <div class="thresholds">
+              <label>开启温度 ≥<strong id="onThreshold">30.0</strong></label>
+              <label>关闭温度 ≤<strong id="offThreshold">28.0</strong></label>
+            </div>
+          </section>
+        </aside>
+
+        <section class="thermal-stage">
+          <div class="stage-title">THERMAL VISUALIZATION</div>
+          <div class="scale scale-left"><span>60</span><span>45</span><span>30</span><span>15</span><span>0</span></div>
+          <canvas id="phoneScene" aria-label="3D phone thermal model"></canvas>
+          <div class="thermal-column">
+            <span>60°C</span>
+            <i></i>
+            <span>0°C</span>
+          </div>
+        </section>
+
+        <aside class="rail right-rail">
+          <section class="panel agent-panel">
+            <div class="panel-title title-row">
+              <span>AI AGENT DIALOG</span>
+              <b id="apiKeyStatus">LOCAL RULES</b>
+            </div>
+            <div class="api-config">
+              <select id="apiProviderSelect" aria-label="AI provider">
+                <option value="openai">OpenAI</option>
+                <option value="doubao">豆包 Ark</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input id="apiBaseUrlInput" type="text" value="https://api.openai.com/v1" aria-label="AI API base URL" />
+              <input id="apiModelInput" type="text" value="gpt-4.1-mini" aria-label="OpenAI model" />
+              <div class="api-key-row">
+                <input id="apiKeyInput" type="password" placeholder="API Key / ARK API Key" autocomplete="off" />
+                <button id="saveApiKeyBtn" type="button">SAVE</button>
+                <button id="clearApiKeyBtn" type="button">CLEAR</button>
+              </div>
+              <p>密钥会保存在本机用户目录，CLEAR 可删除本地保存。</p>
+            </div>
+            <ol id="chatLog" class="chat-log"></ol>
+            <div class="agent-input">
+              <textarea id="agentPrompt" rows="3" placeholder="例如：现在温度多少？温度太高就打开散热器。切换自动模式。"></textarea>
+              <button id="sendAgentBtn" type="button">ASK</button>
+            </div>
+          </section>
+
+          <section class="panel command-panel">
+            <div class="panel-title title-row"><span>COMMAND LOG</span><button id="clearLogBtn" type="button">CLEAR</button></div>
+            <ol id="commandLog"></ol>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="diagnostics">
+        <div class="wave-line" id="waveLine"></div>
+        <div><span>DATA STREAM</span><b id="streamTemp">-- °C</b></div>
+        <div><span>PUBLISH RATE</span><b>10.0 Hz</b></div>
+        <div><span>PACKET LOST</span><b>0.00%</b></div>
+        <div><span>SYSTEM LOAD</span><b id="systemLoad">12%</b></div>
+      </footer>
+    </main>
+    <script type="module" src="/static/app.js?v=device-config-1"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+name: aiplusx-plc
+dependencies:
+  - python=3.13
+  - pip
+  - pip:
+      - paho-mqtt==2.1.0
+      - Flask==3.1.2
