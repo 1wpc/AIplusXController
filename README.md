@@ -1,5 +1,7 @@
 # AIplusXController
 
+![AIplusX PLC Control WebUI](web/static/assets/readme-hero.png)
+
 AIplusXController 是一个用于 AI+X 实验的本地 PLC 控制系统。项目用 Python 通过 MQTT 读取和写入 PLC 变量，并提供一个赛博朋克风格 Web 中控台，让用户可以查看温度、切换自动/手动模式、控制散热器，并通过 AI Agent 对话框使用自然语言完成控制。
 
 本项目用于替代 Dify 不可用时的实验方案：由本地脚本和 WebUI 实现 AI Agent 控制 PLC。
